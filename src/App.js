@@ -1,37 +1,89 @@
-import React, {useState} from 'react';
-import './App.css';
+import React, {useEffect, useState} from 'react';
 import ToDo from "./ToDo";
 import ToDoForm from "./ToDoForm";
+import 'bootstrap/dist/css/bootstrap.min.css'
 
 function App() {
-  const {todos, useTodos} = useState([])
+    const [todos, setTodos] = useState([])
+    const [initValue, setInitValue] = useState(null)
+    const [isEdit, setIsEdit] = useState(false)
 
-  const addTask = () =>{
+    useEffect(()=>{
+        setTodos(JSON.parse(localStorage.getItem('todos')))
+    }, [])
 
-  }
+    useEffect(()=>{
+        if (todos.length && (JSON.stringify(todos) !== localStorage.getItem('todos'))){
+            localStorage.setItem('todos', JSON.stringify(todos))
+        }
+    }, [todos])
 
-  const removeTask = () =>{
+    const addTask = (userInput) =>{
+      if (userInput){
+          if (isEdit) {
+              setTodos([
+                  ...todos.map((todo) =>
+                      todo.id === initValue.id ? {...todo, task: userInput} : {...todo}
+                  )
+              ])
+              setInitValue(null)
+          } else {
+              const newItem = {
+                  id: Math.random().toString(10).substr(2,11),
+                  task: userInput,
+                  complete: false
+              }
+              setTodos([...todos, newItem])
+          }
+      }
+        setIsEdit(false)
+    }
 
-  }
+    const removeTask = (id) =>{
+        setTodos([...todos.filter((todo)=>todo.id !== id)])
+    }
 
-  const handleToggle = () =>{
+    const editTask = (id) =>{
+        const selectedTodo = todos.find(todo => {
+            return todo.id === id
+        })
+        setInitValue(selectedTodo)
+        setIsEdit(true)
+    }
+    const handleToggle = (id) =>{
+        setTodos([
+            ...todos.map((todo) =>
+                todo.id === id ? {...todo, complete: !todo.complete} : {...todo}
+            )
+        ])
+    }
 
-  }
-
-  return (
-      <div>App
-          <header>
+    return (
+      <div className="App">
+          <header className='border'>
               <h1>Список задач: {todos.length}</h1>
           </header>
-          <ToDo/>
-          <ToDoForm/>
-          {todos.map(()=>{
-              return (
-                  <ToDo key={todos.id}/>
-              )
-          })}
+          <div>
+              {todos.map((todo, index) => {
+                  return (
+                      <ToDo
+                          todo={todo}
+                          key={todo.id}
+                          toggleTask={handleToggle}
+                          removeTask={removeTask}
+                          editTask={editTask}
+                          index={1 + index}
+                          />
+                  )
+              })}
+          </div>
+          <ToDoForm
+              addTask={addTask}
+              initValue={initValue}
+              setInitValue={setInitValue}
+          />
       </div>
-  )
+    )
 }
 
 export default App;
